@@ -4,4 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bytes = "1.6.0"
+dashu-int = { version = "0.4.1", default-features = false, features = ["std", "serde"] }
+decorum = "0.3.1"
+educe = { version = "0.5.11", default-features = false, features = ["Hash"] }
+serde = { version = "1.0.197", features = ["derive"] }
+smol_str = { version = "0.2.1", features = ["serde"] }
 tokio = { version = "1.37.0", features = ["full"] }
