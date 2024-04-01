@@ -40,6 +40,7 @@ pub enum Value {
   Nothing,
 }
 
+/// All commands supported by [`kraglin`](crate).
 #[derive(Debug, Clone, PartialEq, Hash)]
 pub enum Command {
   /// `SET`: Sets a key.
@@ -110,32 +111,6 @@ pub enum Command {
   /// `RPOP`: Pops a value from a list tail.
   RightPop { key: SmolStr },
 }
-
-// SET - set key
-// GET - get key
-// MGET - get multiple keys
-// INCR - increment key
-// KEYS - list all keys
-// EXISTS - does key exist
-// DEL -  delete key
-// INFO - server info
-// HSET - hashmap set key
-// HGET - hashmap get key
-// HGETALL - hashmap get all keys
-// HMGET - hashmap get multiple keys
-// SADD - set add
-// SMEMBERS - get set members
-// SCARD - get set cardinality
-// SISMEMBER - set is member
-// SDIFF - set difference
-// SDIFFSTORE - store set difference
-// SREM - remove from set
-// LPUSH - push to list head
-// RPUSH - push to list tail
-// LRANGE - get list elements in range
-// LLEN - get list length
-// LPOP - pop from list head
-// RPOP - pop from list tail
 
 #[tokio::main]
 async fn main() {
