@@ -11,6 +11,10 @@ use crate::{backends::Backend, command::Command, value::Value, KraglinError};
 pub struct SimpleBackend(Arc<Mutex<HashMap<SmolStr, Value>>>);
 
 impl Backend for SimpleBackend {
+  fn new() -> SimpleBackend {
+    SimpleBackend(Arc::new(Mutex::new(HashMap::new())))
+  }
+
   async fn execute(&self, command: Command) -> Result<Value, KraglinError> {
     match command {
       Command::Set { key, value } => {
@@ -174,7 +178,7 @@ impl Backend for SimpleBackend {
         set_b: _,
         new_set: _,
       } => todo!(),
-      Command::SetRemainder { key: _, value: _ } => todo!(),
+      Command::SetRemove { key: _, value: _ } => todo!(),
       Command::LeftPush { key: _, value: _ } => todo!(),
       Command::RightPush { key: _, value: _ } => todo!(),
       Command::ListRange {

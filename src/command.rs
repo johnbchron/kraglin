@@ -55,7 +55,7 @@ pub enum Command {
     new_set: SmolStr,
   },
   /// `SREM`: Removes a value from a set.
-  SetRemainder { key: SmolStr, value: Value },
+  SetRemove { key: SmolStr, value: Value },
   /// `LPUSH`: Pushes a value to a list head.
   LeftPush { key: SmolStr, value: Value },
   /// `RPUSH`: Pushes a value to a list tail.
