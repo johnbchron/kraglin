@@ -17,7 +17,7 @@ type ResultReceiver = oneshot::Receiver<Result<Value, KraglinError>>;
 
 /// The generalized backend trait. All storage/execution backends implement
 /// this.
-pub trait Backend {
+pub trait Backend: Send + Sync + 'static {
   fn execute(
     &self,
     command: Command,
