@@ -12,9 +12,9 @@ use crate::{command::Command, value::Value};
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum KraglinError {}
 
-/// A convenience type alias for a oneshot receiver with a [`kraglin`](crate)
+/// A convenience type alias for a oneshot sender with a [`kraglin`](crate)
 /// result.
-type ResultReceiver = oneshot::Receiver<Result<Value, KraglinError>>;
+type ResultSender = oneshot::Sender<Result<Value, KraglinError>>;
 
 /// The generalized backend trait. All storage/execution backends implement
 /// this.
@@ -22,7 +22,7 @@ pub trait Backend: Send + Sync + 'static {
   fn execute(
     &self,
     command: Command,
-    result_channel: ResultReceiver,
+    result_channel: ResultSender,
   ) -> impl Future<Output = ()> + Send;
 }
 

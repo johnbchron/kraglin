@@ -10,7 +10,7 @@ impl Backend for SimpleBackend {
   async fn execute(
     &self,
     command: Command,
-    result_channel: crate::ResultReceiver,
+    result_channel: crate::ResultSender,
   ) {
     todo!()
   }
