@@ -6,7 +6,7 @@ use std::{
 use smol_str::SmolStr;
 use tokio::sync::Mutex;
 
-use crate::{command::Command, value::Value, Backend, KraglinError};
+use crate::{backends::Backend, command::Command, value::Value, KraglinError};
 
 pub struct SimpleBackend(Arc<Mutex<HashMap<SmolStr, Value>>>);
 
