@@ -29,7 +29,6 @@
         common_args = {
           inherit src;
           doCheck = false;
-
         };
 
         deps_only = craneLib.buildDepsOnly common_args;
@@ -58,6 +57,12 @@
             pname = common_args.pname;
             version = common_args.version;
             
+            inherit src;
+          };
+          deny-check = craneLib.cargoDeny {
+            pname = common_args.pname;
+            version = common_args.version;
+
             inherit src;
           };
           nextest-check = craneLib.cargoNextest (common_args // {
