@@ -41,7 +41,7 @@
       in {
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
-            jq bacon cargo-nextest
+            bacon cargo-nextest cargo-deny
             toolchain
           ];
         };
