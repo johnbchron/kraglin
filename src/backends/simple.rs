@@ -79,11 +79,11 @@ impl Backend for SimpleBackend {
       }
       Command::Keys => {
         let m = self.0.lock().await;
-        let keys = m
-          .keys()
-          .map(|k| Value::SimpleString(k.to_owned()))
-          .collect::<Vec<_>>();
-        Ok(Value::Array(keys))
+        let mut keys = m.keys().cloned().collect::<Vec<_>>();
+        keys.sort_unstable();
+        Ok(Value::Array(
+          keys.into_iter().map(Value::SimpleString).collect(),
+        ))
       }
       Command::Exists { key } => {
         let m = self.0.lock().await;
@@ -100,10 +100,11 @@ impl Backend for SimpleBackend {
       }
       Command::Info => {
         let m = self.0.lock().await;
+        let key_count = m.keys().count();
         Ok(Value::SimpleString(
           format!(
-            "We've got {} keys right now, thanks for asking :)",
-            m.keys().count()
+            "We've got {key_count} key{} right now, thanks for asking :)",
+            if key_count != 1 { "s" } else { "" }
           )
           .into(),
         ))
