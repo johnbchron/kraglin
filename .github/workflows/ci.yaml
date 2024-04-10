@@ -14,7 +14,7 @@ jobs:
       matrix:
         check: [ "clippy-check", "docs-check", "fmt-check", "deny-check", "nextest-check" ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@main
       - name: Use Nix Cache
