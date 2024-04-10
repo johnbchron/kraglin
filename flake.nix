@@ -28,6 +28,10 @@
 
         common_args = {
           inherit src;
+
+          pname = "kraglin";
+          version = "0.1.0";
+
           doCheck = false;
         };
 
