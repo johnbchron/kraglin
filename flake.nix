@@ -24,13 +24,12 @@
         });
 
         craneLib = (crane.mkLib pkgs).overrideToolchain toolchain;
+        src = ./.;
 
         common_args = {
-          src = ./.;
+          inherit src;
           doCheck = false;
 
-          buildInputs = [ ];
-          nativeBuildInputs = [ ];
         };
 
         deps_only = craneLib.buildDepsOnly common_args;
@@ -47,6 +46,25 @@
         };
         packages = {
           default = crate;
+        };
+        checks = {
+          clippy-check = craneLib.cargoClippy (common_args // {
+            cargoArtifacts = deps_only;
+          });
+          docs-check = craneLib.cargoDoc (common_args // {
+            cargoArtifacts = deps_only;
+          });
+          fmt-check = craneLib.cargoFmt {
+            pname = common_args.pname;
+            version = common_args.version;
+            
+            inherit src;
+          };
+          nextest-check = craneLib.cargoNextest (common_args // {
+            cargoArtifacts = deps_only;
+            partitions = 1;
+            partitionType = "count";
+          });
         };
       });
 }
