@@ -246,23 +246,169 @@ impl<B: Backend> BackendExt for B {
 #[generic_tests::define(attrs(tokio::test))]
 #[allow(non_snake_case)]
 mod tests {
+  use std::collections::BTreeMap;
+
   use super::{simple::SimpleBackend, Backend, BackendExt};
-  use crate::{command::Command, value::Value, KraglinError};
+  use crate::{value::Value, KraglinError};
 
   #[tokio::test]
   async fn SET_sets_and_GET_gets<B: Backend>() -> Result<(), KraglinError> {
     let backend = B::new();
 
     backend
-      .SET("key_a".into(), Value::SimpleString("a".into()))
+      .SET("key_a", Value::SimpleString("a".into()))
       .await?;
+    assert_eq!(backend.GET("key_a").await?, Value::SimpleString("a".into()));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn MGET_gets_multiple_keys<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SET("key_a", Value::Integer(2)).await?;
+    backend.SET("key_b", Value::Integer(4)).await?;
     assert_eq!(
-      backend
-        .execute(Command::Get {
-          key: "key_a".into(),
-        })
-        .await?,
-      Value::SimpleString("a".into())
+      backend.MGET(vec!["key_a".into(), "key_b".into()]).await?,
+      Value::Array(vec![Value::Integer(2), Value::Integer(4)])
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn INCR_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SET("int", Value::Integer(2)).await?;
+    backend.SET("big_num", Value::BigNumber(4.into())).await?;
+    backend
+      .SET("string", Value::SimpleString("24".into()))
+      .await?;
+    backend
+      .SET("bulk_string", Value::BulkString("24".into()))
+      .await?;
+
+    backend.INCR("int").await?;
+    backend.INCR("big_num").await?;
+    backend.INCR("string").await?;
+    backend.INCR("bulk_string").await?;
+
+    assert_eq!(backend.GET("int").await?, Value::Integer(3));
+    assert_eq!(backend.GET("big_num").await?, Value::BigNumber(5.into()));
+    assert_eq!(
+      backend.GET("string").await?,
+      Value::SimpleString("25".into())
+    );
+    assert_eq!(
+      backend.GET("bulk_string").await?,
+      Value::BulkString("25".into())
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn KEYS_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SET("a", Value::Integer(1)).await?;
+    backend.SET("b", Value::Integer(2)).await?;
+
+    assert_eq!(
+      backend.KEYS().await?,
+      Value::Array(vec![
+        Value::SimpleString("a".into()),
+        Value::SimpleString("b".into())
+      ])
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn EXISTS_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SET("a", Value::Integer(1)).await?;
+    assert_eq!(backend.EXISTS("a").await?, Value::Integer(1));
+
+    assert_eq!(backend.EXISTS("b").await?, Value::Integer(0));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn DELETE_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SET("a", Value::Integer(1)).await?;
+    assert_eq!(backend.EXISTS("a").await?, Value::Integer(1));
+    assert_eq!(backend.DEL("a").await?, Value::Integer(1));
+    assert_eq!(backend.EXISTS("a").await?, Value::Integer(0));
+    assert_eq!(backend.DEL("a").await?, Value::Integer(0));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn INFO_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SET("a", Value::Integer(1)).await?;
+    assert_eq!(
+      backend.INFO().await?,
+      Value::SimpleString(
+        "We've got 1 key right now, thanks for asking :)".into()
+      )
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn HSET_sets_and_HGET_gets<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.HSET("a", "b", Value::Integer(1)).await?;
+    assert_eq!(backend.HGET("a", "b").await?, Value::Integer(1));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn HGETALL_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.HSET("a", "b", Value::Integer(1)).await?;
+    backend.HSET("a", "c", Value::Integer(2)).await?;
+    assert_eq!(
+      backend.HGETALL("a").await?,
+      Value::Map(
+        [
+          ("b".into(), Value::Integer(1)),
+          ("c".into(), Value::Integer(2))
+        ]
+        .into_iter()
+        .collect::<BTreeMap<smol_str::SmolStr, Value>>()
+      )
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn HMGET_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.HSET("a", "b", Value::Integer(1)).await?;
+    backend.HSET("a", "c", Value::Integer(2)).await?;
+    backend.HSET("a", "d", Value::Integer(3)).await?;
+
+    assert_eq!(
+      backend.HMGET("a", vec!["b".into(), "c".into()]).await?,
+      Value::Array(vec![Value::Integer(1), Value::Integer(2)])
     );
 
     Ok(())
