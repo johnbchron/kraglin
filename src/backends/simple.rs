@@ -14,6 +14,7 @@ use crate::{
   KraglinError,
 };
 
+/// A trait to extend `HashMap` to allow directly setting a key with `Option<V>`
 trait SettableHashMap<K: Eq + Hash, V: Hash> {
   /// Sets a key with an optional value. If `val` is `Some()`, inserts the
   /// value. If `None`, deletes the previous value if it existed.
