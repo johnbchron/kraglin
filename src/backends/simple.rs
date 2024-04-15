@@ -1,3 +1,6 @@
+//! The naive `Backend` implementation, using a `Arc<Mutex<HashMap<SmolStr,
+//! StoredValue>>>`.
+
 use std::{
   collections::{BTreeMap, HashMap},
   hash::Hash,
