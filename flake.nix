@@ -41,15 +41,13 @@
         });
 
       in {
-        devShell = pkgs.mkShell {
+        devShells.default = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
             netcat bacon cargo-nextest cargo-deny
             toolchain
           ];
         };
-        packages = {
-          default = crate;
-        };
+        packages.default = crate;
         checks = {
           clippy-check = craneLib.cargoClippy (common_args // {
             cargoArtifacts = deps_only;
