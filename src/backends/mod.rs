@@ -1,12 +1,12 @@
 //! Defines the `Backend` trait and contains its implementors.
 
+pub mod simple;
+
 use std::future::Future;
 
 use smol_str::SmolStr;
 
 use crate::{command::Command, value::Value, KraglinResult};
-
-mod simple;
 
 /// The generalized backend trait. All storage/execution backends implement
 /// this.
