@@ -19,6 +19,8 @@ pub trait Backend: Send + Sync + 'static {
   ) -> impl Future<Output = KraglinResult> + Send;
 }
 
+/// Extension trait for using commands as functions. Mostly for testing
+/// convenience.
 #[allow(non_snake_case)]
 pub trait BackendExt: Backend {
   async fn SET(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult;
