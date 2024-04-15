@@ -49,6 +49,11 @@ pub trait BackendExt: Backend {
   async fn SADD(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult;
   async fn SMEMBERS(&self, key: impl Into<SmolStr>) -> KraglinResult;
   async fn SCARD(&self, key: impl Into<SmolStr>) -> KraglinResult;
+  async fn SISMEMBER(
+    &self,
+    key: impl Into<SmolStr>,
+    value: Value,
+  ) -> KraglinResult;
   async fn SDIFF(
     &self,
     set_a: impl Into<SmolStr>,
@@ -157,6 +162,18 @@ impl<B: Backend> BackendExt for B {
   async fn SCARD(&self, key: impl Into<SmolStr>) -> KraglinResult {
     self
       .execute(Command::SetCardinality { key: key.into() })
+      .await
+  }
+  async fn SISMEMBER(
+    &self,
+    key: impl Into<SmolStr>,
+    value: Value,
+  ) -> KraglinResult {
+    self
+      .execute(Command::SetIsMember {
+        key: key.into(),
+        value,
+      })
       .await
   }
   async fn SDIFF(
