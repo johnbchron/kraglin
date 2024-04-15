@@ -73,3 +73,35 @@ pub enum Command {
   /// `RPOP`: Pops a value from a list tail.
   RightPop { key: SmolStr },
 }
+
+impl Command {
+  pub fn command_name(&self) -> &'static str {
+    match self {
+      Command::Set { .. } => "SET",
+      Command::Get { .. } => "GET",
+      Command::MultipleGet { .. } => "MGET",
+      Command::Increment { .. } => "INCR",
+      Command::Keys => "KEYS",
+      Command::Exists { .. } => "EXISTS",
+      Command::Delete { .. } => "DEL",
+      Command::Info => "INFO",
+      Command::HashSet { .. } => "HSET",
+      Command::HashGet { .. } => "HGET",
+      Command::HashGetAll { .. } => "HGETALL",
+      Command::HashMultipleGet { .. } => "HMGET",
+      Command::SetAdd { .. } => "SADD",
+      Command::SetMembers { .. } => "SMEMBERS",
+      Command::SetCardinality { .. } => "SCARD",
+      Command::SetIsMember { .. } => "SISMEMBER",
+      Command::SetDifference { .. } => "SDIFF",
+      Command::SetDifferenceStore { .. } => "SDIFFSTORE",
+      Command::SetRemove { .. } => "SREM",
+      Command::LeftPush { .. } => "LPUSH",
+      Command::RightPush { .. } => "RPUSH",
+      Command::ListRange { .. } => "LRANGE",
+      Command::ListLength { .. } => "LLEN",
+      Command::LeftPop { .. } => "LPOP",
+      Command::RightPop { .. } => "RPOP",
+    }
+  }
+}
