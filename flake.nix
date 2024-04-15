@@ -43,7 +43,7 @@
       in {
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
-            bacon cargo-nextest cargo-deny
+            netcat bacon cargo-nextest cargo-deny
             toolchain
           ];
         };
