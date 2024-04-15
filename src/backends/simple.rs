@@ -1,14 +1,39 @@
 use std::{
   collections::{BTreeMap, HashMap},
+  hash::Hash,
   sync::Arc,
 };
 
 use smol_str::SmolStr;
 use tokio::sync::Mutex;
 
-use crate::{backends::Backend, command::Command, value::Value, KraglinError};
+use crate::{
+  backends::Backend,
+  command::Command,
+  value::{StoredValue, Value},
+  KraglinError,
+};
 
-pub struct SimpleBackend(Arc<Mutex<HashMap<SmolStr, Value>>>);
+trait SettableHashMap<K: Eq + Hash, V: Hash> {
+  /// Sets a key with an optional value. If `val` is `Some()`, inserts the
+  /// value. If `None`, deletes the previous value if it existed.
+  fn set(&mut self, key: K, val: Option<V>);
+}
+
+impl<K: Eq + Hash, V: Hash> SettableHashMap<K, V> for HashMap<K, V> {
+  fn set(&mut self, key: K, val: Option<V>) {
+    match val {
+      Some(v) => {
+        self.insert(key, v);
+      }
+      None => {
+        self.remove(&key);
+      }
+    }
+  }
+}
+
+pub struct SimpleBackend(Arc<Mutex<HashMap<SmolStr, StoredValue>>>);
 
 impl Backend for SimpleBackend {
   fn new() -> SimpleBackend {
@@ -19,43 +44,40 @@ impl Backend for SimpleBackend {
     match command {
       Command::Set { key, value } => {
         let mut m = self.0.lock().await;
-        m.insert(key, value);
+        m.set(key, value.into());
         Ok(Value::Nothing)
       }
       Command::Get { key } => {
         let m = self.0.lock().await;
-        Ok(m.get(&key).cloned().unwrap_or(Value::Nothing))
+        Ok(m.get(&key).cloned().into())
       }
       Command::MultipleGet { keys } => {
         let m = self.0.lock().await;
         let values = keys
           .into_iter()
-          .map(|k| m.get(&k).cloned().unwrap_or(Value::Nothing))
+          .map(|k| m.get(&k).cloned().into())
           .collect::<Vec<_>>();
         Ok(Value::Array(values))
       }
       Command::Increment { key } => {
         let mut m = self.0.lock().await;
-        let entry = m.entry(key).or_insert(Value::Integer(0));
-        if matches!(entry, Value::Nothing) {
-          *entry = Value::Integer(0);
-        }
+        let entry = m.entry(key).or_insert(StoredValue::Integer(0));
 
         // try to parse the value as an `i64`, increment it, and then return the
         // incremented value as an Integer
         match entry {
-          Value::Integer(i) => {
+          StoredValue::Integer(i) => {
             *i += 1;
             Ok(Value::Integer(*i))
           }
-          Value::BigNumber(n) => {
+          StoredValue::BigNumber(n) => {
             let Ok(as_i64) = i64::try_from(n.clone()) else {
               return Err(KraglinError::OutOfRange);
             };
             *n = (as_i64 + 1).into();
             Ok(Value::Integer(as_i64 + 1))
           }
-          Value::SimpleString(s) => {
+          StoredValue::SimpleString(s) => {
             if let Ok(as_i64) = s.parse::<i64>() {
               *s = format!("{}", as_i64 + 1).into();
               Ok(Value::Integer(as_i64 + 1))
@@ -63,7 +85,7 @@ impl Backend for SimpleBackend {
               Err(KraglinError::CannotParseAsInteger)
             }
           }
-          Value::BulkString(b) => {
+          StoredValue::BulkString(b) => {
             let Some(as_ascii) = b.as_ascii() else {
               return Err(KraglinError::CannotParseAsInteger);
             };
@@ -87,11 +109,7 @@ impl Backend for SimpleBackend {
       }
       Command::Exists { key } => {
         let m = self.0.lock().await;
-        let exists = match m.get(&key) {
-          Some(Value::Nothing) => false,
-          Some(_) => true,
-          None => false,
-        };
+        let exists = m.get(&key).is_some();
         Ok(Value::Integer(exists.into()))
       }
       Command::Delete { key } => {
@@ -113,13 +131,10 @@ impl Backend for SimpleBackend {
         let mut m = self.0.lock().await;
 
         // get or insert, with a special case for `Nothing`
-        let entry = m.entry(key).or_insert(Value::Map(BTreeMap::new()));
-        if matches!(entry, Value::Nothing) {
-          *entry = Value::Map(BTreeMap::new());
-        }
+        let entry = m.entry(key).or_insert(StoredValue::Map(BTreeMap::new()));
 
         match entry {
-          Value::Map(m) => {
+          StoredValue::Map(m) => {
             let inserted = !m.contains_key(&field);
             m.insert(field, value);
             Ok(Value::Integer(inserted.into()))
@@ -130,11 +145,10 @@ impl Backend for SimpleBackend {
       Command::HashGet { key, field } => {
         let m = self.0.lock().await;
         match m.get(&key) {
-          Some(Value::Map(h)) => match h.get(&field) {
+          Some(StoredValue::Map(h)) => match h.get(&field) {
             Some(v) => Ok(v.clone()),
             None => Ok(Value::Nothing),
           },
-          Some(Value::Nothing) => Ok(Value::Nothing),
           Some(_) => Err(KraglinError::WrongType),
           None => Ok(Value::Nothing),
         }
@@ -142,8 +156,7 @@ impl Backend for SimpleBackend {
       Command::HashGetAll { key } => {
         let m = self.0.lock().await;
         match m.get(&key) {
-          Some(Value::Map(h)) => Ok(Value::Map(h.clone())),
-          Some(Value::Nothing) => Ok(Value::Nothing),
+          Some(StoredValue::Map(h)) => Ok(Value::Map(h.clone())),
           Some(_) => Err(KraglinError::WrongType),
           None => Ok(Value::Nothing),
         }
@@ -158,13 +171,12 @@ impl Backend for SimpleBackend {
         };
 
         match m.get(&key) {
-          Some(Value::Map(m)) => Ok(Value::Array(
+          Some(StoredValue::Map(m)) => Ok(Value::Array(
             fields
               .into_iter()
               .map(|f| m.get(&f).cloned().unwrap_or(Value::Nothing))
               .collect(),
           )),
-          Some(Value::Nothing) => all_nothing(),
           Some(_) => Err(KraglinError::WrongType),
           None => all_nothing(),
         }
