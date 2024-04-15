@@ -1,3 +1,5 @@
+//! Defines the `Backend` trait and contains its implementors.
+
 use std::future::Future;
 
 use smol_str::SmolStr;

@@ -1,3 +1,5 @@
+//! Defines the `Value` and `StoredValue` items.
+
 use std::{
   collections::{BTreeMap, BTreeSet},
   hash::Hasher,

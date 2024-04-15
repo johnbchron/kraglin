@@ -1,3 +1,5 @@
+//! Defines the `Command` item.
+
 use smol_str::SmolStr;
 
 use crate::value::Value;
