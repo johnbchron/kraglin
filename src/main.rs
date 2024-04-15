@@ -15,6 +15,9 @@ pub enum KraglinError {
   OutOfRange,
 }
 
+/// Alias for `Result<Value, KraglinError>`
+pub type KraglinResult = Result<value::Value, KraglinError>;
+
 #[tokio::main]
 async fn main() {
   println!("Hello, world!");

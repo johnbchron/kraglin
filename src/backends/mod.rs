@@ -4,11 +4,9 @@ use std::future::Future;
 
 use smol_str::SmolStr;
 
-use crate::{command::Command, value::Value, KraglinError};
+use crate::{command::Command, value::Value, KraglinResult};
 
 mod simple;
-
-type KraglinResult = Result<Value, KraglinError>;
 
 /// The generalized backend trait. All storage/execution backends implement
 /// this.
