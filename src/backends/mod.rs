@@ -23,68 +23,123 @@ pub trait Backend: Send + Sync + 'static {
 /// convenience.
 #[allow(non_snake_case)]
 pub trait BackendExt: Backend {
-  async fn SET(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult;
-  async fn GET(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn MGET(&self, keys: Vec<SmolStr>) -> KraglinResult;
-  async fn INCR(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn KEYS(&self) -> KraglinResult;
-  async fn EXISTS(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn DEL(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn INFO(&self) -> KraglinResult;
-  async fn HSET(
+  fn SET(
     &self,
-    key: impl Into<SmolStr>,
-    field: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
     value: Value,
-  ) -> KraglinResult;
-  async fn HGET(
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn GET(
     &self,
-    key: impl Into<SmolStr>,
-    field: impl Into<SmolStr>,
-  ) -> KraglinResult;
-  async fn HGETALL(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn HMGET(
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn MGET(
     &self,
-    key: impl Into<SmolStr>,
+    keys: Vec<SmolStr>,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn INCR(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn KEYS(&self) -> impl Future<Output = KraglinResult> + Send;
+  fn EXISTS(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn DEL(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn INFO(&self) -> impl Future<Output = KraglinResult> + Send;
+  fn HSET(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    field: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn HGET(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    field: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn HGETALL(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn HMGET(
+    &self,
+    key: impl Into<SmolStr> + Send,
     fields: Vec<SmolStr>,
-  ) -> KraglinResult;
-  async fn SADD(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult;
-  async fn SMEMBERS(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn SCARD(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn SISMEMBER(
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn SADD(
     &self,
-    key: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
     value: Value,
-  ) -> KraglinResult;
-  async fn SDIFF(
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn SMEMBERS(
     &self,
-    set_a: impl Into<SmolStr>,
-    set_b: impl Into<SmolStr>,
-  ) -> KraglinResult;
-  async fn SDIFFSTORE(
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn SCARD(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn SISMEMBER(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn SDIFF(
+    &self,
+    set_a: impl Into<SmolStr> + Send,
+    set_b: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn SDIFFSTORE(
     self,
-    set_a: impl Into<SmolStr>,
-    set_b: impl Into<SmolStr>,
-    new_set: impl Into<SmolStr>,
-  ) -> KraglinResult;
-  async fn SREM(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult;
-  async fn LPUSH(&self, key: impl Into<SmolStr>, value: Value)
-    -> KraglinResult;
-  async fn RPUSH(&self, key: impl Into<SmolStr>, value: Value)
-    -> KraglinResult;
-  async fn LRANGE(
+    set_a: impl Into<SmolStr> + Send,
+    set_b: impl Into<SmolStr> + Send,
+    new_set: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn SREM(
     &self,
-    key: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn LPUSH(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn RPUSH(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn LRANGE(
+    &self,
+    key: impl Into<SmolStr> + Send,
     start: i64,
     end: i64,
-  ) -> KraglinResult;
-  async fn LLEN(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn LPOP(&self, key: impl Into<SmolStr>) -> KraglinResult;
-  async fn RPOP(&self, key: impl Into<SmolStr>) -> KraglinResult;
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn LLEN(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn LPOP(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
+  fn RPOP(
+    &self,
+    key: impl Into<SmolStr> + Send,
+  ) -> impl Future<Output = KraglinResult> + Send;
 }
 
 impl<B: Backend> BackendExt for B {
-  async fn SET(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult {
+  async fn SET(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> KraglinResult {
     self
       .execute(Command::Set {
         key: key.into(),
@@ -92,27 +147,27 @@ impl<B: Backend> BackendExt for B {
       })
       .await
   }
-  async fn GET(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn GET(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::Get { key: key.into() }).await
   }
   async fn MGET(&self, keys: Vec<SmolStr>) -> KraglinResult {
     self.execute(Command::MultipleGet { keys }).await
   }
-  async fn INCR(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn INCR(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::Increment { key: key.into() }).await
   }
   async fn KEYS(&self) -> KraglinResult { self.execute(Command::Keys).await }
-  async fn EXISTS(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn EXISTS(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::Exists { key: key.into() }).await
   }
-  async fn DEL(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn DEL(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::Delete { key: key.into() }).await
   }
   async fn INFO(&self) -> KraglinResult { self.execute(Command::Info).await }
   async fn HSET(
     &self,
-    key: impl Into<SmolStr>,
-    field: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
+    field: impl Into<SmolStr> + Send,
     value: Value,
   ) -> KraglinResult {
     self
@@ -125,8 +180,8 @@ impl<B: Backend> BackendExt for B {
   }
   async fn HGET(
     &self,
-    key: impl Into<SmolStr>,
-    field: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
+    field: impl Into<SmolStr> + Send,
   ) -> KraglinResult {
     self
       .execute(Command::HashGet {
@@ -135,12 +190,12 @@ impl<B: Backend> BackendExt for B {
       })
       .await
   }
-  async fn HGETALL(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn HGETALL(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::HashGetAll { key: key.into() }).await
   }
   async fn HMGET(
     &self,
-    key: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
     fields: Vec<SmolStr>,
   ) -> KraglinResult {
     self
@@ -150,7 +205,11 @@ impl<B: Backend> BackendExt for B {
       })
       .await
   }
-  async fn SADD(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult {
+  async fn SADD(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> KraglinResult {
     self
       .execute(Command::SetAdd {
         key: key.into(),
@@ -158,17 +217,17 @@ impl<B: Backend> BackendExt for B {
       })
       .await
   }
-  async fn SMEMBERS(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn SMEMBERS(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::SetMembers { key: key.into() }).await
   }
-  async fn SCARD(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn SCARD(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self
       .execute(Command::SetCardinality { key: key.into() })
       .await
   }
   async fn SISMEMBER(
     &self,
-    key: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
     value: Value,
   ) -> KraglinResult {
     self
@@ -180,8 +239,8 @@ impl<B: Backend> BackendExt for B {
   }
   async fn SDIFF(
     &self,
-    set_a: impl Into<SmolStr>,
-    set_b: impl Into<SmolStr>,
+    set_a: impl Into<SmolStr> + Send,
+    set_b: impl Into<SmolStr> + Send,
   ) -> KraglinResult {
     self
       .execute(Command::SetDifference {
@@ -192,9 +251,9 @@ impl<B: Backend> BackendExt for B {
   }
   async fn SDIFFSTORE(
     self,
-    set_a: impl Into<SmolStr>,
-    set_b: impl Into<SmolStr>,
-    new_set: impl Into<SmolStr>,
+    set_a: impl Into<SmolStr> + Send,
+    set_b: impl Into<SmolStr> + Send,
+    new_set: impl Into<SmolStr> + Send,
   ) -> KraglinResult {
     self
       .execute(Command::SetDifferenceStore {
@@ -204,7 +263,11 @@ impl<B: Backend> BackendExt for B {
       })
       .await
   }
-  async fn SREM(&self, key: impl Into<SmolStr>, value: Value) -> KraglinResult {
+  async fn SREM(
+    &self,
+    key: impl Into<SmolStr> + Send,
+    value: Value,
+  ) -> KraglinResult {
     self
       .execute(Command::SetRemove {
         key: key.into(),
@@ -214,7 +277,7 @@ impl<B: Backend> BackendExt for B {
   }
   async fn LPUSH(
     &self,
-    key: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
     value: Value,
   ) -> KraglinResult {
     self
@@ -226,7 +289,7 @@ impl<B: Backend> BackendExt for B {
   }
   async fn RPUSH(
     &self,
-    key: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
     value: Value,
   ) -> KraglinResult {
     self
@@ -238,7 +301,7 @@ impl<B: Backend> BackendExt for B {
   }
   async fn LRANGE(
     &self,
-    key: impl Into<SmolStr>,
+    key: impl Into<SmolStr> + Send,
     start: i64,
     end: i64,
   ) -> KraglinResult {
@@ -250,13 +313,13 @@ impl<B: Backend> BackendExt for B {
       })
       .await
   }
-  async fn LLEN(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn LLEN(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::ListLength { key: key.into() }).await
   }
-  async fn LPOP(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn LPOP(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::LeftPop { key: key.into() }).await
   }
-  async fn RPOP(&self, key: impl Into<SmolStr>) -> KraglinResult {
+  async fn RPOP(&self, key: impl Into<SmolStr> + Send) -> KraglinResult {
     self.execute(Command::RightPop { key: key.into() }).await
   }
 }
