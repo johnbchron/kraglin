@@ -1,8 +1,8 @@
 #![feature(ascii_char)]
 
-mod backends;
-mod command;
-mod value;
+pub mod backends;
+pub mod command;
+pub mod value;
 
 /// The conglomerate error type for all [`kraglin`](crate) commands.
 #[derive(Debug, Clone, thiserror::Error)]
