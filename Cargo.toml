@@ -3,6 +3,9 @@ name = "kraglin"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
+description = "A pure-rust, RESP3-compliant Redis alternative."
+homepage = "https://github.com/kraglin-rs/kraglin"
+repository = "https://github.com/kraglin-rs/kraglin"
 
 [dependencies]
 bytes = "1.6"
