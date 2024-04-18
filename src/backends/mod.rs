@@ -11,8 +11,10 @@ use crate::{command::Command, value::Value, KraglinResult};
 /// The generalized backend trait. All storage/execution backends implement
 /// this.
 pub trait Backend: Send + Sync + 'static {
+  /// Creates a new instance of `Self`.
   fn new() -> Self;
 
+  /// Executes the given command on the backend.
   fn execute(
     &self,
     command: Command,
@@ -22,6 +24,7 @@ pub trait Backend: Send + Sync + 'static {
 /// Extension trait for using commands as functions. Mostly for testing
 /// convenience.
 #[allow(non_snake_case)]
+#[allow(missing_docs)]
 pub trait BackendExt: Backend {
   fn SET(
     &self,

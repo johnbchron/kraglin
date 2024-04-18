@@ -37,6 +37,8 @@ impl<K: Eq + Hash, V: Hash> SettableHashMap<K, V> for HashMap<K, V> {
   }
 }
 
+/// The naive `Backend` implementation, using a `Arc<Mutex<HashMap<SmolStr,
+/// StoredValue>>>`.
 pub struct SimpleBackend(Arc<Mutex<HashMap<SmolStr, StoredValue>>>);
 
 impl Backend for SimpleBackend {
