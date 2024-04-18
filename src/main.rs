@@ -1,4 +1,6 @@
 #![feature(ascii_char)]
+#![deny(missing_docs)]
+#![doc = include_str!("../README.md")]
 
 use std::borrow::Cow;
 
@@ -15,10 +17,13 @@ pub mod value;
 /// The conglomerate error type for all [`kraglin`](crate) commands.
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum KraglinError {
+  /// This value is the wrong type.
   #[error("This value is the wrong type.")]
   WrongType,
+  /// This string type could not be parsed as an integer.
   #[error("This string type could not be parsed as an integer.")]
   CannotParseAsInteger,
+  /// This value is out of range.
   #[error("This value is out of range")]
   OutOfRange,
 }
@@ -26,12 +31,31 @@ pub enum KraglinError {
 /// Alias for `Result<Value, KraglinError>`
 pub type KraglinResult = Result<value::Value, KraglinError>;
 
+/// Application-wide behavior settings.
+///
+/// # Settings
+/// - `listen_port`: the port the application will listen on for TCP
+///   connections. Taken from env var `LISTEN_PORT`, defaults to `6379`.
+/// - `listen_host`: the host descriptor the application will listen on for TCP
+///   connections. Taken from env var `LISTEN_HOST`, defaults to `0.0.0.0`.
 pub struct Settings {
   listen_port: usize,
   listen_host: Cow<'static, str>,
 }
 
 impl Settings {
+  /// Returns the port the application will listen on for TCP connections.
+  pub fn listen_port(&self) -> usize { self.listen_port }
+  /// Returns the host descriptor the application will listen on for TCP
+  /// connections.
+  pub fn listen_host(&self) -> Cow<'static, str> { self.listen_host.clone() }
+}
+
+impl Settings {
+  /// Builds the settings from environment variables.
+  ///
+  /// This function will only fail if `LISTEN_PORT` cannot be parse to a
+  /// `usize`.
   pub fn from_env() -> Result<Settings> {
     let settings = Settings {
       listen_port: std::env::var("LISTEN_PORT")
@@ -46,7 +70,8 @@ impl Settings {
   }
 }
 
-fn setup_tracing() {
+/// Sets up tracing and logging.
+pub fn setup_tracing() {
   use tracing_error::ErrorLayer;
   use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
@@ -69,7 +94,7 @@ async fn main() -> Result<()> {
   let settings = Settings::from_env()?;
 
   let listen_address =
-    format!("{}:{}", settings.listen_host, settings.listen_port);
+    format!("{}:{}", settings.listen_host(), settings.listen_port());
   let listener = TcpListener::bind(&listen_address)
     .await
     .wrap_err("failed to create TCP listener")?;
