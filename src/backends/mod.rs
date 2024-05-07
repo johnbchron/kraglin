@@ -581,6 +581,34 @@ mod tests {
     Ok(())
   }
 
+  #[tokio::test]
+  async fn SDIFFSTORE_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(backend.SDIFF("a", "b").await?, backend.GET("c").await?);
+
+    backend.SADD("a", Value::SimpleString("1".into())).await?;
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(
+      backend.GET("c").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+
+    backend.SADD("b", Value::SimpleString("2".into())).await?;
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(
+      backend.GET("c").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+
+    backend.SADD("b", Value::SimpleString("1".into())).await?;
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(backend.GET("c").await?, Value::Set(BTreeSet::from([])));
+
+    Ok(())
+  }
+
   #[instantiate_tests(<SimpleBackend>)]
   mod simple_backend {}
 }

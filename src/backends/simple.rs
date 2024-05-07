@@ -252,10 +252,30 @@ impl Backend for SimpleBackend {
         }
       }
       Command::SetDifferenceStore {
-        set_a: _,
-        set_b: _,
-        new_set: _,
-      } => todo!(),
+        set_a,
+        set_b,
+        new_set,
+      } => {
+        let mut m = self.0.lock().await;
+
+        // this is the same logic as for SetDifference
+        let new_set_value = match (m.get(&set_a), m.get(&set_b)) {
+          (Some(StoredValue::Set(s1)), Some(StoredValue::Set(s2))) => {
+            s1.difference(s2).cloned().collect()
+          }
+          (Some(StoredValue::Set(s)), None) => s.clone(),
+          (None, Some(StoredValue::Set(_))) => Default::default(),
+          (None, None) => Default::default(),
+          _ => {
+            return Err(KraglinError::WrongType);
+          }
+        };
+        let new_set_size = new_set_value.len();
+
+        m.insert(new_set, StoredValue::Set(new_set_value));
+
+        Ok(Value::Integer(new_set_size as _))
+      }
       Command::SetRemove { key: _, value: _ } => todo!(),
       Command::LeftPush { key: _, value: _ } => todo!(),
       Command::RightPush { key: _, value: _ } => todo!(),
