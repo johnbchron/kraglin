@@ -625,6 +625,29 @@ mod tests {
     Ok(())
   }
 
+  #[tokio::test]
+  async fn LPUSH_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.LPUSH("a", Value::SimpleString("b".into())).await?;
+    assert_eq!(
+      backend.GET("a").await?,
+      Value::Array(vec![Value::SimpleString("b".into())]),
+    );
+    backend.LPUSH("a", Value::SimpleString("b".into())).await?;
+    backend.LPUSH("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(
+      backend.GET("a").await?,
+      Value::Array(vec![
+        Value::SimpleString("c".into()),
+        Value::SimpleString("b".into()),
+        Value::SimpleString("b".into())
+      ]),
+    );
+
+    Ok(())
+  }
+
   #[instantiate_tests(<SimpleBackend>)]
   mod simple_backend {}
 }

@@ -287,7 +287,21 @@ impl Backend for SimpleBackend {
           None => Ok(Value::Integer(0)),
         }
       }
-      Command::LeftPush { key: _, value: _ } => todo!(),
+      Command::LeftPush { key, value } => {
+        let mut m = self.0.lock().await;
+
+        match m.get_mut(&key) {
+          Some(StoredValue::Array(a)) => {
+            a.insert(0, value);
+            Ok(Value::Integer(a.len() as _))
+          }
+          Some(_) => Err(KraglinError::WrongType),
+          None => {
+            m.insert(key, StoredValue::Array(vec![value]));
+            Ok(Value::Integer(1))
+          }
+        }
+      }
       Command::RightPush { key: _, value: _ } => todo!(),
       Command::ListRange {
         key: _,
