@@ -609,6 +609,22 @@ mod tests {
     Ok(())
   }
 
+  #[tokio::test]
+  async fn SREM_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(0));
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(2));
+    backend.SREM("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(1));
+    backend.SREM("a", Value::SimpleString("d".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(1));
+
+    Ok(())
+  }
+
   #[instantiate_tests(<SimpleBackend>)]
   mod simple_backend {}
 }

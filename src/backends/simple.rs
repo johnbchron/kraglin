@@ -276,7 +276,17 @@ impl Backend for SimpleBackend {
 
         Ok(Value::Integer(new_set_size as _))
       }
-      Command::SetRemove { key: _, value: _ } => todo!(),
+      Command::SetRemove { key, value } => {
+        let mut m = self.0.lock().await;
+
+        match m.get_mut(&key) {
+          Some(StoredValue::Set(s)) => {
+            Ok(Value::Integer(s.remove(&value) as _))
+          }
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Integer(0)),
+        }
+      }
       Command::LeftPush { key: _, value: _ } => todo!(),
       Command::RightPush { key: _, value: _ } => todo!(),
       Command::ListRange {
