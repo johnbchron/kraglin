@@ -187,18 +187,121 @@ impl Backend for SimpleBackend {
           None => all_nothing(),
         }
       }
-      Command::SetAdd { key: _, value: _ } => todo!(),
-      Command::SetMembers { key: _ } => todo!(),
-      Command::SetCardinality { key: _ } => todo!(),
-      Command::SetIsMember { key: _, value: _ } => todo!(),
-      Command::SetDifference { set_a: _, set_b: _ } => todo!(),
+      Command::SetAdd { key, value } => {
+        let mut m = self.0.lock().await;
+
+        let entry =
+          m.entry(key).or_insert(StoredValue::Set(Default::default()));
+
+        let set = match entry {
+          StoredValue::Set(s) => s,
+          _ => {
+            return Err(KraglinError::WrongType);
+          }
+        };
+
+        Ok(Value::Integer(set.insert(value) as i64))
+      }
+      Command::SetMembers { key } => {
+        let m = self.0.lock().await;
+
+        match m.get(&key) {
+          Some(StoredValue::Set(s)) => Ok(Value::Set(s.clone())),
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Set(Default::default())),
+        }
+      }
+      Command::SetCardinality { key } => {
+        let m = self.0.lock().await;
+
+        match m.get(&key) {
+          Some(StoredValue::Set(s)) => Ok(Value::Integer(s.len() as _)),
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Integer(0)),
+        }
+      }
+      Command::SetIsMember { key, value } => {
+        let m = self.0.lock().await;
+
+        match m.get(&key) {
+          Some(StoredValue::Set(s)) => {
+            Ok(Value::Integer(s.contains(&value) as _))
+          }
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Integer(0)),
+        }
+      }
+      Command::SetDifference { set_a, set_b } => {
+        let m = self.0.lock().await;
+
+        match (m.get(&set_a), m.get(&set_b)) {
+          // if both values exist and are sets
+          (Some(StoredValue::Set(s1)), Some(StoredValue::Set(s2))) => {
+            Ok(Value::Set(s1.difference(s2).cloned().collect()))
+          }
+          // if only the first one exists and is a set
+          (Some(StoredValue::Set(s)), None) => Ok(Value::Set(s.clone())),
+          // if only the second one exists and is a set
+          (None, Some(StoredValue::Set(_))) => {
+            Ok(Value::Set(Default::default()))
+          }
+          // if neither exist
+          (None, None) => Ok(Value::Set(Default::default())),
+          // under any other case
+          _ => Err(KraglinError::WrongType),
+        }
+      }
       Command::SetDifferenceStore {
-        set_a: _,
-        set_b: _,
-        new_set: _,
-      } => todo!(),
-      Command::SetRemove { key: _, value: _ } => todo!(),
-      Command::LeftPush { key: _, value: _ } => todo!(),
+        set_a,
+        set_b,
+        new_set,
+      } => {
+        let mut m = self.0.lock().await;
+
+        // this is the same logic as for SetDifference
+        let new_set_value = match (m.get(&set_a), m.get(&set_b)) {
+          (Some(StoredValue::Set(s1)), Some(StoredValue::Set(s2))) => {
+            s1.difference(s2).cloned().collect()
+          }
+          (Some(StoredValue::Set(s)), None) => s.clone(),
+          (None, Some(StoredValue::Set(_))) => Default::default(),
+          (None, None) => Default::default(),
+          _ => {
+            return Err(KraglinError::WrongType);
+          }
+        };
+        let new_set_size = new_set_value.len();
+
+        m.insert(new_set, StoredValue::Set(new_set_value));
+
+        Ok(Value::Integer(new_set_size as _))
+      }
+      Command::SetRemove { key, value } => {
+        let mut m = self.0.lock().await;
+
+        match m.get_mut(&key) {
+          Some(StoredValue::Set(s)) => {
+            Ok(Value::Integer(s.remove(&value) as _))
+          }
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Integer(0)),
+        }
+      }
+      Command::LeftPush { key, value } => {
+        let mut m = self.0.lock().await;
+
+        match m.get_mut(&key) {
+          Some(StoredValue::Array(a)) => {
+            a.insert(0, value);
+            Ok(Value::Integer(a.len() as _))
+          }
+          Some(_) => Err(KraglinError::WrongType),
+          None => {
+            m.insert(key, StoredValue::Array(vec![value]));
+            Ok(Value::Integer(1))
+          }
+        }
+      }
       Command::RightPush { key: _, value: _ } => todo!(),
       Command::ListRange {
         key: _,

@@ -1,23 +1,14 @@
 //! Defines the `Value` and `StoredValue` items.
 
-use std::{
-  collections::{BTreeMap, BTreeSet},
-  hash::Hasher,
-};
+use std::collections::{BTreeMap, BTreeSet};
 
-use educe::Educe;
 use smol_str::SmolStr;
-
-fn f64_hash<H: Hasher>(s: &f64, state: &mut H) {
-  decorum::hash::FloatHash::float_hash(s, state);
-}
 
 /// The base value type in [`kraglin`](crate).
 ///
 /// This represents every non-error type that can be sent, received, or used
 /// as a key's value.
-#[derive(Debug, Clone, PartialEq, Educe)]
-#[educe(Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Value {
   /// A simple string. A simple string is not allowed to contain carraige
   /// return (`\r`) or line feed (`\n`) characters.
@@ -31,7 +22,7 @@ pub enum Value {
   /// A boolean value.
   Boolean(bool),
   /// A double precision float ([`f64`]).
-  Double(#[educe(Hash(method(f64_hash)))] f64),
+  Double(decorum::Total<f64>),
   /// A number which allows for values larger than an [`i64`].
   BigNumber(dashu_int::IBig),
   /// A string dictionary of [`Value`]s.
@@ -44,8 +35,7 @@ pub enum Value {
 
 /// The stored version of [`Value`]. The main difference is the absence of
 /// `Nothing`.
-#[derive(Debug, Clone, PartialEq, Educe)]
-#[educe(Hash)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum StoredValue {
   /// A simple string. A simple string is not allowed to contain carraige
   /// return (`\r`) or line feed (`\n`) characters.
@@ -59,7 +49,7 @@ pub enum StoredValue {
   /// A boolean value.
   Boolean(bool),
   /// A double precision float ([`f64`]).
-  Double(#[educe(Hash(method(f64_hash)))] f64),
+  Double(decorum::Total<f64>),
   /// A number which allows for values larger than an [`i64`].
   BigNumber(dashu_int::IBig),
   /// A string dictionary of [`Value`]s.

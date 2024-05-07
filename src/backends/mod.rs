@@ -97,7 +97,7 @@ pub trait BackendExt: Backend {
     set_b: impl Into<SmolStr> + Send,
   ) -> impl Future<Output = KraglinResult> + Send;
   fn SDIFFSTORE(
-    self,
+    &self,
     set_a: impl Into<SmolStr> + Send,
     set_b: impl Into<SmolStr> + Send,
     new_set: impl Into<SmolStr> + Send,
@@ -253,7 +253,7 @@ impl<B: Backend> BackendExt for B {
       .await
   }
   async fn SDIFFSTORE(
-    self,
+    &self,
     set_a: impl Into<SmolStr> + Send,
     set_b: impl Into<SmolStr> + Send,
     new_set: impl Into<SmolStr> + Send,
@@ -331,7 +331,7 @@ impl<B: Backend> BackendExt for B {
 #[generic_tests::define(attrs(tokio::test))]
 #[allow(non_snake_case)]
 mod tests {
-  use std::collections::BTreeMap;
+  use std::collections::{BTreeMap, BTreeSet};
 
   use super::{simple::SimpleBackend, Backend, BackendExt};
   use crate::{value::Value, KraglinError};
@@ -494,6 +494,155 @@ mod tests {
     assert_eq!(
       backend.HMGET("a", vec!["b".into(), "c".into()]).await?,
       Value::Array(vec![Value::Integer(1), Value::Integer(2)])
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SADD_and_SCARD_work<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(0));
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(1));
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(2));
+
+    // make sure keys deduplicate
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(2));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SMEMBERS_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(
+      backend.SMEMBERS("a").await?,
+      Value::Set(BTreeSet::from([
+        Value::SimpleString("b".into()),
+        Value::SimpleString("c".into())
+      ]))
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SISMEMBER_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(
+      backend
+        .SISMEMBER("a", Value::SimpleString("b".into()))
+        .await?,
+      Value::Integer(0)
+    );
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    assert_eq!(
+      backend
+        .SISMEMBER("a", Value::SimpleString("b".into()))
+        .await?,
+      Value::Integer(1)
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SDIFF_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([]))
+    );
+    backend.SADD("a", Value::SimpleString("1".into())).await?;
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+    backend.SADD("b", Value::SimpleString("2".into())).await?;
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+    backend.SADD("b", Value::SimpleString("1".into())).await?;
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([]))
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SDIFFSTORE_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(backend.SDIFF("a", "b").await?, backend.GET("c").await?);
+
+    backend.SADD("a", Value::SimpleString("1".into())).await?;
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(
+      backend.GET("c").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+
+    backend.SADD("b", Value::SimpleString("2".into())).await?;
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(
+      backend.GET("c").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+
+    backend.SADD("b", Value::SimpleString("1".into())).await?;
+    backend.SDIFFSTORE("a", "b", "c").await?;
+    assert_eq!(backend.GET("c").await?, Value::Set(BTreeSet::from([])));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SREM_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(0));
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(2));
+    backend.SREM("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(1));
+    backend.SREM("a", Value::SimpleString("d".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(1));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn LPUSH_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.LPUSH("a", Value::SimpleString("b".into())).await?;
+    assert_eq!(
+      backend.GET("a").await?,
+      Value::Array(vec![Value::SimpleString("b".into())]),
+    );
+    backend.LPUSH("a", Value::SimpleString("b".into())).await?;
+    backend.LPUSH("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(
+      backend.GET("a").await?,
+      Value::Array(vec![
+        Value::SimpleString("c".into()),
+        Value::SimpleString("b".into()),
+        Value::SimpleString("b".into())
+      ]),
     );
 
     Ok(())
