@@ -231,7 +231,26 @@ impl Backend for SimpleBackend {
           None => Ok(Value::Integer(0)),
         }
       }
-      Command::SetDifference { set_a: _, set_b: _ } => todo!(),
+      Command::SetDifference { set_a, set_b } => {
+        let m = self.0.lock().await;
+
+        match (m.get(&set_a), m.get(&set_b)) {
+          // if both values exist and are sets
+          (Some(StoredValue::Set(s1)), Some(StoredValue::Set(s2))) => {
+            Ok(Value::Set(s1.difference(s2).cloned().collect()))
+          }
+          // if only the first one exists and is a set
+          (Some(StoredValue::Set(s)), None) => Ok(Value::Set(s.clone())),
+          // if only the second one exists and is a set
+          (None, Some(StoredValue::Set(_))) => {
+            Ok(Value::Set(Default::default()))
+          }
+          // if neither exist
+          (None, None) => Ok(Value::Set(Default::default())),
+          // under any other case
+          _ => Err(KraglinError::WrongType),
+        }
+      }
       Command::SetDifferenceStore {
         set_a: _,
         set_b: _,

@@ -554,6 +554,33 @@ mod tests {
     Ok(())
   }
 
+  #[tokio::test]
+  async fn SDIFF_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([]))
+    );
+    backend.SADD("a", Value::SimpleString("1".into())).await?;
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+    backend.SADD("b", Value::SimpleString("2".into())).await?;
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([Value::SimpleString("1".into())]))
+    );
+    backend.SADD("b", Value::SimpleString("1".into())).await?;
+    assert_eq!(
+      backend.SDIFF("a", "b").await?,
+      Value::Set(BTreeSet::from([]))
+    );
+
+    Ok(())
+  }
+
   #[instantiate_tests(<SimpleBackend>)]
   mod simple_backend {}
 }
