@@ -187,10 +187,50 @@ impl Backend for SimpleBackend {
           None => all_nothing(),
         }
       }
-      Command::SetAdd { key: _, value: _ } => todo!(),
-      Command::SetMembers { key: _ } => todo!(),
-      Command::SetCardinality { key: _ } => todo!(),
-      Command::SetIsMember { key: _, value: _ } => todo!(),
+      Command::SetAdd { key, value } => {
+        let mut m = self.0.lock().await;
+
+        let entry =
+          m.entry(key).or_insert(StoredValue::Set(Default::default()));
+
+        let set = match entry {
+          StoredValue::Set(s) => s,
+          _ => {
+            return Err(KraglinError::WrongType);
+          }
+        };
+
+        Ok(Value::Integer(set.insert(value) as i64))
+      }
+      Command::SetMembers { key } => {
+        let m = self.0.lock().await;
+
+        match m.get(&key) {
+          Some(StoredValue::Set(s)) => Ok(Value::Set(s.clone())),
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Set(Default::default())),
+        }
+      }
+      Command::SetCardinality { key } => {
+        let m = self.0.lock().await;
+
+        match m.get(&key) {
+          Some(StoredValue::Set(s)) => Ok(Value::Integer(s.len() as _)),
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Integer(0)),
+        }
+      }
+      Command::SetIsMember { key, value } => {
+        let m = self.0.lock().await;
+
+        match m.get(&key) {
+          Some(StoredValue::Set(s)) => {
+            Ok(Value::Integer(s.contains(&value) as _))
+          }
+          Some(_) => Err(KraglinError::WrongType),
+          None => Ok(Value::Integer(0)),
+        }
+      }
       Command::SetDifference { set_a: _, set_b: _ } => todo!(),
       Command::SetDifferenceStore {
         set_a: _,

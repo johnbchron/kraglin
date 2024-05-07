@@ -331,7 +331,7 @@ impl<B: Backend> BackendExt for B {
 #[generic_tests::define(attrs(tokio::test))]
 #[allow(non_snake_case)]
 mod tests {
-  use std::collections::BTreeMap;
+  use std::collections::{BTreeMap, BTreeSet};
 
   use super::{simple::SimpleBackend, Backend, BackendExt};
   use crate::{value::Value, KraglinError};
@@ -494,6 +494,61 @@ mod tests {
     assert_eq!(
       backend.HMGET("a", vec!["b".into(), "c".into()]).await?,
       Value::Array(vec![Value::Integer(1), Value::Integer(2)])
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SADD_and_SCARD_work<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(0));
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(1));
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(2));
+
+    // make sure keys deduplicate
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(backend.SCARD("a").await?, Value::Integer(2));
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SMEMBERS_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    backend.SADD("a", Value::SimpleString("c".into())).await?;
+    assert_eq!(
+      backend.SMEMBERS("a").await?,
+      Value::Set(BTreeSet::from([
+        Value::SimpleString("b".into()),
+        Value::SimpleString("c".into())
+      ]))
+    );
+
+    Ok(())
+  }
+
+  #[tokio::test]
+  async fn SISMEMBER_works<B: Backend>() -> Result<(), KraglinError> {
+    let backend = B::new();
+
+    assert_eq!(
+      backend
+        .SISMEMBER("a", Value::SimpleString("b".into()))
+        .await?,
+      Value::Integer(0)
+    );
+    backend.SADD("a", Value::SimpleString("b".into())).await?;
+    assert_eq!(
+      backend
+        .SISMEMBER("a", Value::SimpleString("b".into()))
+        .await?,
+      Value::Integer(1)
     );
 
     Ok(())
