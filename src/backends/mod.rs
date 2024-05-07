@@ -97,7 +97,7 @@ pub trait BackendExt: Backend {
     set_b: impl Into<SmolStr> + Send,
   ) -> impl Future<Output = KraglinResult> + Send;
   fn SDIFFSTORE(
-    self,
+    &self,
     set_a: impl Into<SmolStr> + Send,
     set_b: impl Into<SmolStr> + Send,
     new_set: impl Into<SmolStr> + Send,
@@ -253,7 +253,7 @@ impl<B: Backend> BackendExt for B {
       .await
   }
   async fn SDIFFSTORE(
-    self,
+    &self,
     set_a: impl Into<SmolStr> + Send,
     set_b: impl Into<SmolStr> + Send,
     new_set: impl Into<SmolStr> + Send,
